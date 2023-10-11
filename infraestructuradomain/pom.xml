@@ -6,6 +6,31 @@
         <artifactId>pruebachainparent</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
+    
+    
+    <groupId>com.pruebachain.infraestructuradomain</groupId>
     <artifactId>infraestructuradomain</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
+    
+    
+    <modules>
+        <module>eureka</module>
+    </modules>
+    
+    <properties>
+        <spring-cloud-dependencies.version>2021.0.0</spring-cloud-dependencies.version>
+    </properties>
+    
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud-dependencies.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 </project>

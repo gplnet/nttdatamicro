@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 
 
 import com.pruebachain.cliente.entities.Cliente;
+import com.pruebachain.cliente.entities.ClienteCuenta;
 
 import io.netty.channel.ChannelOption;
 import io.netty.channel.epoll.EpollChannelOption;
@@ -30,6 +31,9 @@ import io.netty.handler.timeout.WriteTimeoutHandler;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,31 +79,94 @@ public class ClienteController {
             });
 
   @GetMapping( value = "/listar")
-  public ResponseEntity<List<Cliente>> findAll() {
-    List<Cliente> client = new ArrayList<>();   
+  public ResponseEntity<List<Cliente>> findAll() {    
+    List<Cliente> client = new ArrayList<>();    
+    Map<String, Object> lista = new HashMap<>();
+    Map<String, List<?>> movimientos = new HashMap<>();
     try {
       client = (List<Cliente>) clienteRepository.findAll();
       client.forEach(
-          x -> {            
+          c -> {
+            c.getCuentas()
+                .forEach(
+                    cc -> {
+                      JsonNode jsp = getCuentaName(cc.getCuenta_id());
+                      cc.setCuenta_tipo(jsp.get("tipo_cuenta").asText());
+                      //c.setMovientos(getTransactions(jsp.get("numero_cuenta").asText()));
+                      lista.put( ""+cc.getCuenta_id(), jsp.get("numero_cuenta").asText());
+                    });
+          });
+      logger.info("v+"+lista.toString());
+
+      lista.entrySet().stream()
+          .forEach(
+              m -> {
+                movimientos.put(m.getKey(), getTransactions((String) m.getValue()));
+              });
+      logger.info("m+"+movimientos.toString());
+      for(Cliente c : client){
+         if(!c.getCuentas().isEmpty()){
+           
+           for (ClienteCuenta cc : c.getCuentas()) {
+            movimientos.entrySet().stream()
+                .forEach(
+                    t -> {
+                      logger.info("t1 : "+t.getKey());
+                      logger.info("t2 : "+cc.getCuenta_id());
+                      if (Long.parseLong(t.getKey()) == cc.getCuenta_id()) {
+                        c.setMovientos(t.getValue());
+                        logger.info("t3 : "+c.getMovientos().toString());
+                      }
+                    });
+           }
+         }
+      }
+      
+      /*for(Cliente c : client){
+          logger.info("x+"+c.getCliente_id().toString());
+        if(!c.getCuentas().isEmpty()){            
+            for (ClienteCuenta cc : c.getCuentas()) {              
+                logger.info("x++"+cc.getCuenta_tipo());
+                JsonNode jsp = getCuentaName(cc.getCuenta_id());
+                String tipoCuenta = jsp.get("tipo_cuenta").asText();
+                logger.info("x+++"+tipoCuenta);
+                cc.setCuenta_tipo(tipoCuenta);
+                List<?> mov = getTransactions(jsp.get("numero_cuenta").asText());
+                c.setMovientos(mov);
+                logger.info("findAll-" + c.getMovientos().size());
+                logger.info("findAll-" + mov.toString());
+                
+                
+                lista.put("movimientos", mov);                
+                logger.info("findAll-2" + lista.toString());
+                logger.info("findAll-2" + lista.size());
+                mvv.add(lista);
+                logger.info("findAll-3" + mvv.toString());
+                logger.info("findAll-3" + mvv.size());
+            }            
+        }
+      }
+      logger.info("x+++"+mvv.toString());*/
+      
+      /*client.forEach(
+          x -> {
             x.getCuentas()
                 .forEach(
                     y -> {
-                      
                       JsonNode jsp = getCuentaName(y.getCuenta_id());
-                      logger.info("findAll"+jsp.toString());
+                      logger.info("findAll" + jsp.toString());
                       String tipoCuenta = jsp.get("tipo_cuenta").asText();
-                      y.setCuenta_tipo(tipoCuenta);                      
-                      
-                      List<?> mov = getTransactions(jsp.get("numero_cuenta").asText());
-                      logger.info("findAll"+mov.toString());
-                      x.setMovientos(mov);
-                      //mov = movimientos;
-                    });
-            logger.info("x"+x.getMovientos().toString());
-            //x.setMovientos(mov);
-          });
+                      y.setCuenta_tipo(tipoCuenta);
 
-      
+                      List<?> mov = getTransactions(jsp.get("numero_cuenta").asText());
+                      logger.info("findAll" + mov.toString());
+                      x.setMovientos(mov);    
+                      
+                     
+                    });
+            logger.info("x" + x.getMovientos().toString());
+            // x.setMovientos(mov);
+          });*/
 
     } catch (Exception e) {
       new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -171,9 +238,9 @@ public class ClienteController {
   private JsonNode getCuentaName(long id) { 
     logger.info("getCuentaName"+id);
         WebClient build = webClientBuilder.clientConnector(new ReactorClientHttpConnector(client))
-                .baseUrl("http://localhost:8832/cuentas")
+                .baseUrl("http://bussinesdomain-cuentas/cuentas")
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .defaultUriVariables(Collections.singletonMap("url", "http://localhost:8832/cuentas"))
+                .defaultUriVariables(Collections.singletonMap("url", "http://bussinesdomain-cuentas/cuentas"))
                 .build();
         JsonNode block = build.method(HttpMethod.GET).uri("/listar/" + id)
                 .retrieve().bodyToMono(JsonNode.class).block();
@@ -187,7 +254,7 @@ public class ClienteController {
   private  List<?> getTransactions(String  numero) { 
     logger.info("getTransactions"+numero);
         WebClient build = webClientBuilder.clientConnector(new ReactorClientHttpConnector(client))
-                .baseUrl("http://localhost:8833/movimientos")
+                .baseUrl("http://bussinesdomain-movimientos/movimientos")
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)               
                 .build();
         

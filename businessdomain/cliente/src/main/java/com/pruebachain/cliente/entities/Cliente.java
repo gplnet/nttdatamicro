@@ -39,11 +39,13 @@ public class Cliente extends Persona {
   @OneToMany(fetch = FetchType.LAZY, mappedBy = "cliente", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<ClienteCuenta> cuentas;
 
-  @Transient private List<?> movientos;
+  @Transient 
+  private List<?> movientos;
   
 
   public Cliente(List<ClienteCuenta> cuentas, List<?> movientos) {
     this.cuentas =  new ArrayList<ClienteCuenta>();
+    this.movientos = new ArrayList<>();
     
   }
 
