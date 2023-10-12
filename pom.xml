@@ -76,7 +76,7 @@
             </plugin>
             <!--It is the spring-boot repackage goal that repackages the JAR produced 
             by maven to specify the main class and make it executable using an embedded container-->
-            <plugin>
+            <!--<plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>     
                 <version>${spring-boot.version}</version>      
@@ -88,7 +88,7 @@
                     </execution>
                 </executions>
             </plugin>        
-            <!--   <plugin>
+             <plugin>
                 <groupId>com.spotify</groupId>
                 <artifactId>dockerfile-maven-plugin</artifactId>
                 <version>${dockerfile-maven-version}</version>                               
@@ -103,13 +103,14 @@
                     </execution>
                 </executions>
                 <configuration>                       
-                    <repository>digitalthinking/microservice-docker-${project.artifactId}</repository>
+                    <repository>pruebantt/microservice-docker-${project.artifactId}</repository>
                     <tag>${project.version}</tag>
+                    <pullNewerImage>false</pullNewerImage>
                     <buildArgs>
                         <JAR_FILE>${project.build.finalName}.jar</JAR_FILE>
                     </buildArgs>
                 </configuration>
-            </plugin>-->  
+            </plugin> -->
             
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

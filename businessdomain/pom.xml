@@ -100,7 +100,17 @@
             <artifactId>lombok</artifactId>
             <optional>true</optional>
             <version>${org.lombo.version}</version>
-        </dependency>       
+        </dependency>
+        
+        <dependency>
+                 <groupId>net.sf.jasperreports</groupId>
+                 <artifactId>jasperreports</artifactId>
+                 <version>6.17.0</version>
+         </dependency>   
+         <dependency>
+             <groupId>com.fasterxml.jackson.dataformat</groupId>
+             <artifactId>jackson-dataformat-xml</artifactId>
+         </dependency>    
         
         <!-- mapper beans -->
         <dependency>

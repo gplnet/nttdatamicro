@@ -5,8 +5,9 @@
 
 package com.pruebachain.cuenta.controller;
 
-import com.pruebachain.cuenta.respository.CuentaRepository;
+
 import com.pruebachain.cuenta.entities.Cuenta;
+import com.pruebachain.cuenta.service.ICuentaService;
 import java.util.ArrayList;
 
 import org.springframework.web.bind.annotation.RestController;
@@ -28,15 +29,17 @@ import org.springframework.web.bind.annotation.PutMapping;
 @RestController
 @RequestMapping("/cuentas")
 public class CuentaRestController {
-  
-  @Autowired 
-  private CuentaRepository cuentaRepository;
+
+  @Autowired private ICuentaService cuentaRepository;
 
   @GetMapping( value = "/listar")
   public  ResponseEntity<List<Cuenta>> findAll() {
     List<Cuenta> cuenta = new ArrayList<>();
     try {
-      cuenta = (List<Cuenta>) cuentaRepository.findAll();
+      cuenta = (List<Cuenta>) cuentaRepository.listar();
+      if(cuenta == null || cuenta.isEmpty()){
+        return ResponseEntity.noContent().build();
+      }
     } catch (Exception e) {
       new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -44,21 +47,32 @@ public class CuentaRestController {
   }
 
   @GetMapping(value = "/listar/{id}")
-  public ResponseEntity<Cuenta> listarId(@PathVariable Long id) {
+  public ResponseEntity<Cuenta> listarId(@PathVariable Integer id) {
     Cuenta cuenta = new Cuenta();
     try {
-      cuenta = cuentaRepository.findById(id).get();
+      cuenta = cuentaRepository.listarId(id);
     } catch (Exception e) {
       return new ResponseEntity<Cuenta>(cuenta, HttpStatus.INTERNAL_SERVER_ERROR);
     }
     return new ResponseEntity<Cuenta>(cuenta, HttpStatus.OK);	
+  }
+  
+  @GetMapping(value = "/cuentaListar/{cuenta}")
+  public ResponseEntity<Cuenta> listarCuenta(@PathVariable String cuenta) {
+    Cuenta cuent = new Cuenta();
+    try {
+      cuent = cuentaRepository.getCuentaByNumber(cuenta);
+    } catch (Exception e) {
+      return new ResponseEntity<Cuenta>(cuent, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+    return new ResponseEntity<Cuenta>(cuent, HttpStatus.OK);	
   }
 
   @PutMapping(value = "/actualizar/{id}")
   public ResponseEntity<Integer> put( @RequestBody Cuenta input) {
     int rpsta = 0;
     try {
-       rpsta = (int) (cuentaRepository.save(input)!= null ? input.getCuenta_id():0);
+       rpsta = (int) (cuentaRepository.registrar(input)!= null ? input.getCuenta_id():0);
        //rpsta > 0 ? 0 : 1;
     } catch (Exception e) {
       return new ResponseEntity<Integer>(rpsta, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -70,19 +84,19 @@ public class CuentaRestController {
   public ResponseEntity<Cuenta> post(@RequestBody Cuenta input) {
     Cuenta cuenta = new Cuenta();
     try {
-      cuenta = cuentaRepository.save(input);
+      cuenta = cuentaRepository.registrar(input);
     } catch (Exception e) {
       return new ResponseEntity<Cuenta>(cuenta, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    return new ResponseEntity<Cuenta>(cuenta, HttpStatus.OK);
+    return new ResponseEntity<Cuenta>(cuenta, HttpStatus.CREATED);
   }
 
   @DeleteMapping(value = "/eliminar/{id}")
   public ResponseEntity<Integer> delete(@PathVariable Long id) {    
     int resultado = 0;
     try {
-      cuentaRepository.deleteById(id);
+      cuentaRepository.eliminar(id);
       resultado = 1;
 
     } catch (Exception e) {

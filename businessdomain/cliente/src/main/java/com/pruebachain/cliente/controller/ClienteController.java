@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 
 import com.pruebachain.cliente.entities.Cliente;
 import com.pruebachain.cliente.entities.ClienteCuenta;
+import com.pruebachain.cliente.service.IClienteService;
 
 import io.netty.channel.ChannelOption;
 import io.netty.channel.epoll.EpollChannelOption;
@@ -54,7 +55,7 @@ import reactor.netty.http.client.HttpClient;
 public class ClienteController {
 
   @Autowired 
-  private ClienteRepository clienteRepository;
+  private IClienteService clienteRepository;
   
   private final WebClient.Builder webClientBuilder;
   
@@ -84,7 +85,7 @@ public class ClienteController {
     Map<String, Object> lista = new HashMap<>();
     Map<String, List<?>> movimientos = new HashMap<>();
     try {
-      client = (List<Cliente>) clienteRepository.findAll();
+      client = (List<Cliente>) clienteRepository.listar();
       client.forEach(
           c -> {
             c.getCuentas()
@@ -178,27 +179,43 @@ public class ClienteController {
   
 
   @GetMapping(value = "/listar/{id}")
-  public ResponseEntity<Cliente> listarId(@PathVariable Long id) {
+  public ResponseEntity<Cliente> listarId(@PathVariable Integer id) {
     Cliente client = new Cliente();
     try {
-      client = clienteRepository.findById(id).get();
+      client = clienteRepository.listarId(id);
     } catch (Exception e) {
       return new ResponseEntity<Cliente>(client, HttpStatus.INTERNAL_SERVER_ERROR);
     }
     return new ResponseEntity<Cliente>(client, HttpStatus.OK);	
   }
+  
+  
+  @GetMapping(value = "/listarCliente/{cuenta}")
+  public ResponseEntity<Object> listarClienteByAccount(@PathVariable String cuenta) {
+    Cliente client = new Cliente();
+    try {
+      
+      JsonNode jsp = getCuentaByNumber(cuenta);//ID CUENTA
+      logger.info("findAll-3" + jsp.toString());
+      Object obj = clienteRepository.findClienteByCodeAccount(jsp.get("cuenta_id").asLong());
+      logger.info("findAll-3" + obj.toString());
+    } catch (Exception e) {
+      return new ResponseEntity<Object>(client, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+    return new ResponseEntity<Object>(client, HttpStatus.OK);	
+  }
 
   @PutMapping(value = "/actualizar/{id}")
-  public ResponseEntity<Integer> put(@PathVariable long id, @RequestBody Cliente input) {  
+  public ResponseEntity<Integer> put(@PathVariable Integer id, @RequestBody Cliente input) {  
      
     int rpsta = 0;
     try {
-      Cliente find = clienteRepository.findById(id).get();
+      Cliente find = clienteRepository.listarId(id);
       if(find != null){
         find.setCliente_id(input.getCliente_id());
 
       }
-       rpsta = (int) (clienteRepository.save(input)!= null ? input.getCliente_id(): 0);
+       rpsta = (int) (clienteRepository.registrar(input)!= null ? input.getCliente_id(): 0);
        //rpsta > 0 ? 0 : 1;
     } catch (Exception e) {
       return new ResponseEntity<Integer>(rpsta, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -211,7 +228,7 @@ public class ClienteController {
     Cliente client = new Cliente();
     try {
       input.getCuentas().forEach(x -> x.setCliente(input));
-      client = clienteRepository.save(input);
+      client = clienteRepository.registrar(input);
     } catch (Exception e) {
       return new ResponseEntity<Cliente>(client, HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -225,7 +242,7 @@ public class ClienteController {
   public  ResponseEntity<Integer> delete(@PathVariable Long id) {
     int resultado = 0;
     try {
-      clienteRepository.deleteById(id);
+      clienteRepository.eliminar(id);
       resultado = 1;
     } catch (Exception e) {
       resultado = 0;
@@ -235,12 +252,27 @@ public class ClienteController {
     return new ResponseEntity<Integer>(resultado, HttpStatus.OK);
   }
   
+  private JsonNode getCuentaByNumber(String numero) { 
+    logger.info("getCuentaByNumber"+numero);
+        WebClient build = webClientBuilder.clientConnector(new ReactorClientHttpConnector(client))
+                .baseUrl("http://localhost:8832/cuentas")//bussinesdomain-cuentas
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .defaultUriVariables(Collections.singletonMap("url", "http://localhost:8832/cuentas"))//bussinesdomain-cuentas
+                .build();
+        JsonNode block = build.method(HttpMethod.GET).uri("/cuentaListar/" + numero)
+                .retrieve().bodyToMono(JsonNode.class).block();
+        logger.info("->"+block.toString());
+        //String name = block.get("tipo_cuenta").asText();
+        //logger.info("->"+name);
+        return block;
+    }
+  
   private JsonNode getCuentaName(long id) { 
     logger.info("getCuentaName"+id);
         WebClient build = webClientBuilder.clientConnector(new ReactorClientHttpConnector(client))
-                .baseUrl("http://bussinesdomain-cuentas/cuentas")
+                .baseUrl("http://localhost:8832/cuentas")//bussinesdomain-cuentas
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .defaultUriVariables(Collections.singletonMap("url", "http://bussinesdomain-cuentas/cuentas"))
+                .defaultUriVariables(Collections.singletonMap("url", "http://localhost:8832/cuentas"))//bussinesdomain-cuentas
                 .build();
         JsonNode block = build.method(HttpMethod.GET).uri("/listar/" + id)
                 .retrieve().bodyToMono(JsonNode.class).block();
@@ -254,7 +286,7 @@ public class ClienteController {
   private  List<?> getTransactions(String  numero) { 
     logger.info("getTransactions"+numero);
         WebClient build = webClientBuilder.clientConnector(new ReactorClientHttpConnector(client))
-                .baseUrl("http://bussinesdomain-movimientos/movimientos")
+                .baseUrl("http://localhost:8833/movimientos")//bussinesdomain-movimientos
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)               
                 .build();
         
