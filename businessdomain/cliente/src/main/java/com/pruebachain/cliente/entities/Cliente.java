@@ -27,14 +27,16 @@ import lombok.Data;
 @Data
 @PrimaryKeyJoinColumn(name="cliente_id")
 public class Cliente extends Persona {
-
-  
+    
   private Long cliente_id;
+  
+  @Column(name  = "cliente_cod", length = 150, nullable = false)
+  private String cliente_cod;
   
   @Column(name  = "contrasena", length = 150, nullable = false)
   private String  contrasena;
-  @Column(name = "estado", nullable=true, columnDefinition = "boolean default true")
-  private Boolean  estado;
+  @Column(name = "estado")
+  private Boolean  estado = true;
 
   @OneToMany(fetch = FetchType.LAZY, mappedBy = "cliente", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<ClienteCuenta> cuentas;

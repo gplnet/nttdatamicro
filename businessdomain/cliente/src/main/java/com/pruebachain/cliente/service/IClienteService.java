@@ -5,7 +5,8 @@
 
 package com.pruebachain.cliente.service;
 
-import com.pruebachain.cliente.entities.Cliente;
+import com.pruebachain.cliente.dto.ClienteDTO;
+
 import java.util.List;
 
 
@@ -15,18 +16,18 @@ import java.util.List;
 
 public interface IClienteService {
 
-  Cliente registrar(Cliente cliente);
+  ClienteDTO registrar(ClienteDTO cliente);
 
-  int modificar(Cliente cliente);
+  ClienteDTO modificar(String clienteID, ClienteDTO cliente);
 
-  void eliminar(Long id);
+  void eliminar(String id) throws Exception;
 
-  Cliente listarId(int id);
+  ClienteDTO listarId(String id) throws Exception;
   
   
-  Cliente listarByAccount(String cuenta);
+  ClienteDTO listarByAccount(String cuenta);
   
   Object findClienteByCodeAccount(Long code);
 
-  List<Cliente> listar();
+  List<ClienteDTO> listar();
 }

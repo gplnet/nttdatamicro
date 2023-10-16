@@ -2,17 +2,23 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/springframework/RestController.java to edit this template
  */
-
 package com.pruebachain.cuenta.controller;
 
-
+import com.pruebachain.cuenta.dto.AccountDTO;
 import com.pruebachain.cuenta.entities.Cuenta;
+import com.pruebachain.cuenta.entities.request.AcccountRequestModel;
+import com.pruebachain.cuenta.entities.response.AccountRest;
+import com.pruebachain.cuenta.entities.response.OperationStatusModel;
+import com.pruebachain.cuenta.entities.response.OperationsName;
+import com.pruebachain.cuenta.entities.response.RequestOperationStatus;
 import com.pruebachain.cuenta.service.ICuentaService;
 import java.util.ArrayList;
 
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
 import java.util.List;
+import org.apache.commons.beanutils.BeanUtils;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -30,79 +36,103 @@ import org.springframework.web.bind.annotation.PutMapping;
 @RequestMapping("/cuentas")
 public class CuentaRestController {
 
-  @Autowired private ICuentaService cuentaRepository;
+    @Autowired
+    private ICuentaService cuentaRepository;
 
-  @GetMapping( value = "/listar")
-  public  ResponseEntity<List<Cuenta>> findAll() {
-    List<Cuenta> cuenta = new ArrayList<>();
-    try {
-      cuenta = (List<Cuenta>) cuentaRepository.listar();
-      if(cuenta == null || cuenta.isEmpty()){
-        return ResponseEntity.noContent().build();
-      }
-    } catch (Exception e) {
-      new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+    @GetMapping(value = "/cuentaListar/{cuenta}")
+    public ResponseEntity<AccountRest> listarCuenta(@PathVariable String cuenta) {
+        AccountRest cuent = new AccountRest();
+        try {
+            ModelMapper modelMapper = new ModelMapper();
+            AccountDTO createdAccount = cuentaRepository.getCuentaByNumber(cuenta);
+            cuent = modelMapper.map(createdAccount, AccountRest.class);
+        } catch (Exception e) {
+            return new ResponseEntity<AccountRest>(cuent, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return new ResponseEntity<AccountRest>(cuent, HttpStatus.OK);
     }
-     return new ResponseEntity<List<Cuenta>>((List<Cuenta>) cuenta, HttpStatus.OK);
-  }
+    
+     
 
-  @GetMapping(value = "/listar/{id}")
-  public ResponseEntity<Cuenta> listarId(@PathVariable Integer id) {
-    Cuenta cuenta = new Cuenta();
-    try {
-      cuenta = cuentaRepository.listarId(id);
-    } catch (Exception e) {
-      return new ResponseEntity<Cuenta>(cuenta, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-    return new ResponseEntity<Cuenta>(cuenta, HttpStatus.OK);	
-  }
-  
-  @GetMapping(value = "/cuentaListar/{cuenta}")
-  public ResponseEntity<Cuenta> listarCuenta(@PathVariable String cuenta) {
-    Cuenta cuent = new Cuenta();
-    try {
-      cuent = cuentaRepository.getCuentaByNumber(cuenta);
-    } catch (Exception e) {
-      return new ResponseEntity<Cuenta>(cuent, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-    return new ResponseEntity<Cuenta>(cuent, HttpStatus.OK);	
-  }
-
-  @PutMapping(value = "/actualizar/{id}")
-  public ResponseEntity<Integer> put( @RequestBody Cuenta input) {
-    int rpsta = 0;
-    try {
-       rpsta = (int) (cuentaRepository.registrar(input)!= null ? input.getCuenta_id():0);
-       //rpsta > 0 ? 0 : 1;
-    } catch (Exception e) {
-      return new ResponseEntity<Integer>(rpsta, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-       return new ResponseEntity<Integer>(rpsta, HttpStatus.OK);
-  }
-
-  @PostMapping(value = "/registrar")
-  public ResponseEntity<Cuenta> post(@RequestBody Cuenta input) {
-    Cuenta cuenta = new Cuenta();
-    try {
-      cuenta = cuentaRepository.registrar(input);
-    } catch (Exception e) {
-      return new ResponseEntity<Cuenta>(cuenta, HttpStatus.INTERNAL_SERVER_ERROR);
+    @PutMapping(value = "/actualizar/{id}")
+    public ResponseEntity<OperationStatusModel> put(@PathVariable String id, @RequestBody AcccountRequestModel input) {        
+        OperationStatusModel returnValue = new OperationStatusModel();
+        try {            
+            ModelMapper modelMapper = new ModelMapper();
+            AccountDTO accountDto = modelMapper.map(input, AccountDTO.class);
+            returnValue.setOpretationName(OperationsName.UPDATE.name());
+            AccountDTO createdAccount = cuentaRepository.updateAcount(id, accountDto);   
+            returnValue.setOperationResult(RequestOperationStatus.SUCCESS.name()); 
+        } catch (Exception e) {
+            return new ResponseEntity<OperationStatusModel>(returnValue, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return new ResponseEntity<OperationStatusModel>(returnValue, HttpStatus.OK);
     }
 
-    return new ResponseEntity<Cuenta>(cuenta, HttpStatus.CREATED);
-  }
+    @DeleteMapping(value = "/eliminar/{id}")
+    public ResponseEntity<OperationStatusModel> delete(@PathVariable String id) {
+        OperationStatusModel returnValue = new OperationStatusModel();
+        try {
 
-  @DeleteMapping(value = "/eliminar/{id}")
-  public ResponseEntity<Integer> delete(@PathVariable Long id) {    
-    int resultado = 0;
-    try {
-      cuentaRepository.eliminar(id);
-      resultado = 1;
+            returnValue.setOpretationName(OperationsName.DELETE.name());
+            cuentaRepository.eliminar(id);
+            returnValue.setOperationResult(RequestOperationStatus.SUCCESS.name());
 
-    } catch (Exception e) {
-      resultado = 0;
-      return new ResponseEntity<Integer>(resultado, HttpStatus.INTERNAL_SERVER_ERROR);
+        } catch (Exception e) {
+
+            return new ResponseEntity<OperationStatusModel>(returnValue, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return new ResponseEntity<OperationStatusModel>(returnValue, HttpStatus.OK);
     }
-    return new ResponseEntity<Integer>(resultado, HttpStatus.OK);
-  }
+
+    @GetMapping(value = "/listar")
+    public ResponseEntity<List<AccountRest>> findAll() {
+        List<AccountRest> cuentaList = new ArrayList<>();
+        try {
+            
+            List<AccountDTO> listDTO =  cuentaRepository.listar();
+            for(AccountDTO  accounDto : listDTO){                
+                ModelMapper modelMapper = new ModelMapper();
+                AccountRest accountRest = modelMapper.map(accounDto, AccountRest.class);
+                cuentaList.add(accountRest);
+            }
+            
+        } catch (Exception e) {
+            new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return new ResponseEntity<List<AccountRest>>((List<AccountRest>) cuentaList, HttpStatus.OK);
+    }
+
+    @GetMapping(value = "/listar/{id}")
+    public ResponseEntity<AccountRest> listarId(@PathVariable String id) {
+        AccountRest cuenta = new AccountRest();
+        try {
+            ModelMapper modelMapper = new ModelMapper();
+            AccountDTO createdAccount = cuentaRepository.findByAccountId(id);
+            cuenta = modelMapper.map(createdAccount, AccountRest.class);
+        } catch (Exception e) {
+            return new ResponseEntity<AccountRest>(cuenta, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return new ResponseEntity<AccountRest>(cuenta, HttpStatus.OK);
+    }
+
+    @PostMapping(value = "/registrar")
+    public ResponseEntity<AccountRest> post(@RequestBody AcccountRequestModel input) {
+
+        AccountRest cuenta = new AccountRest();
+        try {
+
+            ModelMapper modelMapper = new ModelMapper();
+            AccountDTO accountDto = modelMapper.map(input, AccountDTO.class);
+
+            AccountDTO createdAccount = cuentaRepository.registrar(accountDto);
+            cuenta = modelMapper.map(createdAccount, AccountRest.class);
+
+        } catch (Exception e) {
+            return new ResponseEntity<AccountRest>(cuenta, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        return new ResponseEntity<AccountRest>(cuenta, HttpStatus.CREATED);
+    }
+
 }

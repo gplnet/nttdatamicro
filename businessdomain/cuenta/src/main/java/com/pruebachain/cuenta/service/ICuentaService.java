@@ -5,7 +5,7 @@
 
 package com.pruebachain.cuenta.service;
 
-import com.pruebachain.cuenta.entities.Cuenta;
+import com.pruebachain.cuenta.dto.AccountDTO;
 import java.util.List;
 
 /**
@@ -13,15 +13,15 @@ import java.util.List;
  */
 public interface ICuentaService {
 
-  Cuenta registrar(Cuenta cuenta);
+  AccountDTO registrar(AccountDTO cuenta);
+  
+  AccountDTO updateAcount(String accountId, AccountDTO cuenta);
+  
+  AccountDTO findByAccountId(String id) throws Exception; 
 
-  int modificar(Cuenta cuenta);
+  void eliminar(String id) throws Exception;;  
 
-  void eliminar(Long id);
+  List<AccountDTO> listar();  
 
-  Cuenta listarId(int id);
-
-  List<Cuenta> listar();  
-
-  Cuenta getCuentaByNumber(String cuenta);
+  AccountDTO getCuentaByNumber(String cuenta)throws Exception;
 }

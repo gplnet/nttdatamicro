@@ -24,9 +24,12 @@ public class Cuenta implements Serializable {
   
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long cuenta_id;
+  private Long id;
   
-  @Column(name  = "numero_cuenta", length = 150, nullable = false)
+  @Column(name  = "cuenta_id", nullable = false)
+  private String cuenta_id;
+  
+  @Column(name  = "numero_cuenta", length = 150, nullable = false, unique = true)
   private String numero_cuenta;
   
   @Column(name  = "tipo_cuenta", length = 150, nullable = false)
@@ -35,8 +38,8 @@ public class Cuenta implements Serializable {
   @Column(name = "saldo_inicial", columnDefinition = "Decimal(10,2)", nullable = false)
   private double saldo_inicial;
   
-  @Column(name = "estado", nullable=true, columnDefinition = "boolean default true")
-  private Boolean estado;
+  @Column(name = "estado")
+  private Boolean estado = true;
   
   //@ManyToOne
 	//@JoinColumn(name="cliente_id", nullable = false)

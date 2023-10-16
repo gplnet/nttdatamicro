@@ -28,7 +28,7 @@ public abstract class Persona {
   private Long cliente_id;
   @Column(name  = "nombre", length = 150, nullable = false)
   private String  nombre;
-  @Column(name = "genero", length = 1, nullable = false)
+  @Column(name = "genero", length = 1, nullable = true)
   private String  genero;
   @Column(name = "edad", length = 9, nullable=true)
   private int     edad;
@@ -36,7 +36,7 @@ public abstract class Persona {
   private String  identificacion;
   @Column(name  = "direccion", length = 150, nullable = false)
   private String  direccion;
-  @Column(name  = "telefono", length = 150, nullable = false)
+  @Column(name  = "telefono", length = 150, nullable = true)
   private String telefono;
   
   

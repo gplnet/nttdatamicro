@@ -2,10 +2,10 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/springframework/RestController.java to edit this template
  */
-
 package com.pruebachain.cliente.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.pruebachain.cliente.dto.ClienteDTO;
 import com.pruebachain.cliente.repository.ClienteRepository;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,10 +19,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 
-
-
 import com.pruebachain.cliente.entities.Cliente;
 import com.pruebachain.cliente.entities.ClienteCuenta;
+import com.pruebachain.cliente.entities.request.ClientRequestModel;
+import com.pruebachain.cliente.entities.response.ClientRest;
+import com.pruebachain.cliente.entities.response.OperationStatusModel;
+import com.pruebachain.cliente.entities.response.OperationsName;
+import com.pruebachain.cliente.entities.response.RequestOperationStatus;
 import com.pruebachain.cliente.service.IClienteService;
 
 import io.netty.channel.ChannelOption;
@@ -36,6 +39,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -54,17 +58,17 @@ import reactor.netty.http.client.HttpClient;
 @RequestMapping("/clientes")
 public class ClienteController {
 
-  @Autowired 
-  private IClienteService clienteRepository;
-  
-  private final WebClient.Builder webClientBuilder;
-  
-  private Logger logger = LoggerFactory.getLogger(this.getClass());
-  
-  public ClienteController(WebClient.Builder webClientBuilder) {
+    @Autowired
+    private IClienteService clienteRepository;
+
+    private final WebClient.Builder webClientBuilder;
+
+    private Logger logger = LoggerFactory.getLogger(this.getClass());
+
+    public ClienteController(WebClient.Builder webClientBuilder) {
         this.webClientBuilder = webClientBuilder;
-  }
-  HttpClient client = HttpClient.create()
+    }
+    HttpClient client = HttpClient.create()
             //Connection Timeout: is a period within which a connection between a client and a server must be established
             .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000)
             .option(ChannelOption.SO_KEEPALIVE, true)
@@ -79,181 +83,144 @@ public class ClienteController {
                 connection.addHandlerLast(new WriteTimeoutHandler(5000, TimeUnit.MILLISECONDS));
             });
 
-  @GetMapping( value = "/listar")
-  public ResponseEntity<List<Cliente>> findAll() {    
-    List<Cliente> client = new ArrayList<>();    
-    Map<String, Object> lista = new HashMap<>();
-    Map<String, List<?>> movimientos = new HashMap<>();
-    try {
-      client = (List<Cliente>) clienteRepository.listar();
-      client.forEach(
-          c -> {
-            c.getCuentas()
-                .forEach(
-                    cc -> {
-                      JsonNode jsp = getCuentaName(cc.getCuenta_id());
-                      cc.setCuenta_tipo(jsp.get("tipo_cuenta").asText());
-                      //c.setMovientos(getTransactions(jsp.get("numero_cuenta").asText()));
-                      lista.put( ""+cc.getCuenta_id(), jsp.get("numero_cuenta").asText());
+    @GetMapping(value = "/listar")
+    public ResponseEntity<List<ClientRest>> findAll() {
+        List<ClientRest> client = new ArrayList<>();
+        Map<String, Object> lista = new HashMap<>();
+        Map<String, List<?>> movimientos = new HashMap<>();
+        try {
+            List<ClienteDTO> listDTO = clienteRepository.listar();
+            for (ClienteDTO clientDTO : listDTO) {
+                ModelMapper modelMapper = new ModelMapper();
+                ClientRest clientRest = modelMapper.map(clientDTO, ClientRest.class);
+                client.add(clientRest);
+            }
+            //client = (List<Cliente>) clienteRepository.listar();//client Cliente
+            client.forEach(
+                    c -> {
+                        c.getCuentas()
+                                .forEach(
+                                        cc -> {
+                                            JsonNode jsp = getCuentaName(cc.getCuenta_id());
+                                            cc.setCuenta_tipo(jsp.get("tipo_cuenta").asText());
+                                            //c.setMovientos(getTransactions(jsp.get("numero_cuenta").asText()));
+                                            lista.put("" + cc.getCuenta_id(), jsp.get("numero_cuenta").asText());
+                                        });
                     });
-          });
-      logger.info("v+"+lista.toString());
+            logger.info("v+" + lista.toString());
 
-      lista.entrySet().stream()
-          .forEach(
-              m -> {
-                movimientos.put(m.getKey(), getTransactions((String) m.getValue()));
-              });
-      logger.info("m+"+movimientos.toString());
-      for(Cliente c : client){
-         if(!c.getCuentas().isEmpty()){
-           
-           for (ClienteCuenta cc : c.getCuentas()) {
-            movimientos.entrySet().stream()
-                .forEach(
-                    t -> {
-                      logger.info("t1 : "+t.getKey());
-                      logger.info("t2 : "+cc.getCuenta_id());
-                      if (Long.parseLong(t.getKey()) == cc.getCuenta_id()) {
-                        c.setMovientos(t.getValue());
-                        logger.info("t3 : "+c.getMovientos().toString());
-                      }
-                    });
-           }
-         }
-      }
-      
-      /*for(Cliente c : client){
-          logger.info("x+"+c.getCliente_id().toString());
-        if(!c.getCuentas().isEmpty()){            
-            for (ClienteCuenta cc : c.getCuentas()) {              
-                logger.info("x++"+cc.getCuenta_tipo());
-                JsonNode jsp = getCuentaName(cc.getCuenta_id());
-                String tipoCuenta = jsp.get("tipo_cuenta").asText();
-                logger.info("x+++"+tipoCuenta);
-                cc.setCuenta_tipo(tipoCuenta);
-                List<?> mov = getTransactions(jsp.get("numero_cuenta").asText());
-                c.setMovientos(mov);
-                logger.info("findAll-" + c.getMovientos().size());
-                logger.info("findAll-" + mov.toString());
-                
-                
-                lista.put("movimientos", mov);                
-                logger.info("findAll-2" + lista.toString());
-                logger.info("findAll-2" + lista.size());
-                mvv.add(lista);
-                logger.info("findAll-3" + mvv.toString());
-                logger.info("findAll-3" + mvv.size());
-            }            
+            lista.entrySet().stream()
+                    .forEach(
+                            m -> {
+                                movimientos.put(m.getKey(), getTransactions((String) m.getValue()));
+                            });
+            logger.info("m+" + movimientos.toString());
+            for (ClientRest c : client) {
+                if (!c.getCuentas().isEmpty()) {
+
+                    for (ClienteCuenta cc : c.getCuentas()) {
+                        movimientos.entrySet().stream()
+                                .forEach(
+                                        t -> {
+                                            logger.info("t1 : " + t.getKey());
+                                            logger.info("t2 : " + cc.getCuenta_id());
+                                            if (Long.parseLong(t.getKey()) == cc.getCuenta_id()) {
+                                                c.setMovientos(t.getValue());
+                                                logger.info("t3 : " + c.getMovientos().toString());
+                                            }
+                                        });
+                    }
+                }
+            }
+        } catch (Exception e) {
+            new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
-      }
-      logger.info("x+++"+mvv.toString());*/
-      
-      /*client.forEach(
-          x -> {
-            x.getCuentas()
-                .forEach(
-                    y -> {
-                      JsonNode jsp = getCuentaName(y.getCuenta_id());
-                      logger.info("findAll" + jsp.toString());
-                      String tipoCuenta = jsp.get("tipo_cuenta").asText();
-                      y.setCuenta_tipo(tipoCuenta);
-
-                      List<?> mov = getTransactions(jsp.get("numero_cuenta").asText());
-                      logger.info("findAll" + mov.toString());
-                      x.setMovientos(mov);    
-                      
-                     
-                    });
-            logger.info("x" + x.getMovientos().toString());
-            // x.setMovientos(mov);
-          });*/
-
-    } catch (Exception e) {
-      new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        return new ResponseEntity<List<ClientRest>>((List<ClientRest>) client, HttpStatus.OK);
     }
-    return new ResponseEntity<List<Cliente>>((List<Cliente>) client, HttpStatus.OK);
-  }
-  
-  
-  
 
-  @GetMapping(value = "/listar/{id}")
-  public ResponseEntity<Cliente> listarId(@PathVariable Integer id) {
-    Cliente client = new Cliente();
-    try {
-      client = clienteRepository.listarId(id);
-    } catch (Exception e) {
-      return new ResponseEntity<Cliente>(client, HttpStatus.INTERNAL_SERVER_ERROR);
+    @GetMapping(value = "/listar/{id}")
+    public ResponseEntity<ClientRest> listarId(@PathVariable String id) {
+        ClientRest client = new ClientRest();
+        try {
+            ModelMapper modelMapper = new ModelMapper();
+            ClienteDTO clientDTO = clienteRepository.listarId(id);
+            client = modelMapper.map(clientDTO, ClientRest.class);
+        } catch (Exception e) {
+            return new ResponseEntity<ClientRest>(client, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return new ResponseEntity<ClientRest>(client, HttpStatus.OK);
     }
-    return new ResponseEntity<Cliente>(client, HttpStatus.OK);	
-  }
-  
-  
-  @GetMapping(value = "/listarCliente/{cuenta}")
-  public ResponseEntity<Object> listarClienteByAccount(@PathVariable String cuenta) {
-    Cliente client = new Cliente();
-    try {
-      
-      JsonNode jsp = getCuentaByNumber(cuenta);//ID CUENTA
-      logger.info("findAll-3" + jsp.toString());
-      Object obj = clienteRepository.findClienteByCodeAccount(jsp.get("cuenta_id").asLong());
-      logger.info("findAll-3" + obj.toString());
-    } catch (Exception e) {
-      return new ResponseEntity<Object>(client, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-    return new ResponseEntity<Object>(client, HttpStatus.OK);	
-  }
 
-  @PutMapping(value = "/actualizar/{id}")
-  public ResponseEntity<Integer> put(@PathVariable Integer id, @RequestBody Cliente input) {  
-     
-    int rpsta = 0;
-    try {
-      Cliente find = clienteRepository.listarId(id);
-      if(find != null){
-        find.setCliente_id(input.getCliente_id());
+    @GetMapping(value = "/listarCliente/{cuenta}")
+    public ResponseEntity<Object> listarClienteByAccount(@PathVariable String cuenta) {
+        Object obj = new Object();
+        try {
 
-      }
-       rpsta = (int) (clienteRepository.registrar(input)!= null ? input.getCliente_id(): 0);
-       //rpsta > 0 ? 0 : 1;
-    } catch (Exception e) {
-      return new ResponseEntity<Integer>(rpsta, HttpStatus.INTERNAL_SERVER_ERROR);
+            JsonNode jsp = getCuentaByNumber(cuenta);//ID CUENTA
+            logger.info("findAll-3" + jsp.toString());
+            obj = clienteRepository.findClienteByCodeAccount(jsp.get("cuenta_id").asLong());
+            logger.info("findAll-3" + obj.toString());
+        } catch (Exception e) {
+            return new ResponseEntity<Object>(obj, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return new ResponseEntity<Object>(obj, HttpStatus.OK);
     }
-       return new ResponseEntity<Integer>(rpsta, HttpStatus.OK);
-  }
 
-  @PostMapping(value = "/registrar")
-  public ResponseEntity<Cliente> post(@RequestBody Cliente input) {
-    Cliente client = new Cliente();
-    try {
-      input.getCuentas().forEach(x -> x.setCliente(input));
-      client = clienteRepository.registrar(input);
-    } catch (Exception e) {
-      return new ResponseEntity<Cliente>(client, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-    
-    return new ResponseEntity<Cliente>(client, HttpStatus.OK);
-  }
-  
- 
+    @PutMapping(value = "/actualizar/{id}")
+    public ResponseEntity<OperationStatusModel> put(@PathVariable String id, @RequestBody ClientRequestModel input) {
+        OperationStatusModel returnValue = new OperationStatusModel();
+        try {
+            ModelMapper modelMapper = new ModelMapper();
+            ClienteDTO clienteDTO = modelMapper.map(input, ClienteDTO.class);
+            returnValue.setOpretationName(OperationsName.UPDATE.name());
+            ClienteDTO find = clienteRepository.modificar(id, clienteDTO);
+            returnValue.setOperationResult(RequestOperationStatus.SUCCESS.name());
 
-  @DeleteMapping(value = "/eliminar/{id}")
-  public  ResponseEntity<Integer> delete(@PathVariable Long id) {
-    int resultado = 0;
-    try {
-      clienteRepository.eliminar(id);
-      resultado = 1;
-    } catch (Exception e) {
-      resultado = 0;
-      return new ResponseEntity<Integer>(resultado, HttpStatus.INTERNAL_SERVER_ERROR);
-      
+            //rpsta > 0 ? 0 : 1;
+        } catch (Exception e) {
+            return new ResponseEntity<OperationStatusModel>(returnValue, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return new ResponseEntity<OperationStatusModel>(returnValue, HttpStatus.OK);
     }
-    return new ResponseEntity<Integer>(resultado, HttpStatus.OK);
-  }
-  
-  private JsonNode getCuentaByNumber(String numero) { 
-    logger.info("getCuentaByNumber"+numero);
+
+    @PostMapping(value = "/registrar")
+    public ResponseEntity<ClientRest> post(@RequestBody ClientRest input) {
+        ClientRest client = new ClientRest();
+        try {
+            ModelMapper modelMapper = new ModelMapper();
+            //input.getCuentas().forEach(x -> x.setCliente(input));
+            ClienteDTO clientDTO = modelMapper.map(input, ClienteDTO.class);
+            //input.getCuentas().forEach((x) -> {x.setCliente(input);});
+
+            //client = clienteRepository.registrar(input);
+            ClienteDTO createdClient = clienteRepository.registrar(clientDTO);
+            client = modelMapper.map(createdClient, ClientRest.class);
+
+        } catch (Exception e) {
+            return new ResponseEntity<ClientRest>(client, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        return new ResponseEntity<ClientRest>(client, HttpStatus.OK);
+    }
+
+    @DeleteMapping(value = "/eliminar/{id}")
+    public ResponseEntity<OperationStatusModel> delete(@PathVariable String id) {
+        OperationStatusModel returnValue = new OperationStatusModel();
+        try {
+            returnValue.setOpretationName(OperationsName.DELETE.name());
+            clienteRepository.eliminar(id);
+            returnValue.setOperationResult(RequestOperationStatus.SUCCESS.name());
+
+        } catch (Exception e) {
+
+            return new ResponseEntity<OperationStatusModel>(returnValue, HttpStatus.INTERNAL_SERVER_ERROR);
+
+        }
+        return new ResponseEntity<OperationStatusModel>(returnValue, HttpStatus.OK);
+    }
+
+    private JsonNode getCuentaByNumber(String numero) {
+        logger.info("getCuentaByNumber" + numero);
         WebClient build = webClientBuilder.clientConnector(new ReactorClientHttpConnector(client))
                 .baseUrl("http://localhost:8832/cuentas")//bussinesdomain-cuentas
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
@@ -261,14 +228,14 @@ public class ClienteController {
                 .build();
         JsonNode block = build.method(HttpMethod.GET).uri("/cuentaListar/" + numero)
                 .retrieve().bodyToMono(JsonNode.class).block();
-        logger.info("->"+block.toString());
+        logger.info("->" + block.toString());
         //String name = block.get("tipo_cuenta").asText();
         //logger.info("->"+name);
         return block;
     }
-  
-  private JsonNode getCuentaName(long id) { 
-    logger.info("getCuentaName"+id);
+
+    private JsonNode getCuentaName(long id) {
+        logger.info("getCuentaName" + id);
         WebClient build = webClientBuilder.clientConnector(new ReactorClientHttpConnector(client))
                 .baseUrl("http://localhost:8832/cuentas")//bussinesdomain-cuentas
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
@@ -276,28 +243,26 @@ public class ClienteController {
                 .build();
         JsonNode block = build.method(HttpMethod.GET).uri("/listar/" + id)
                 .retrieve().bodyToMono(JsonNode.class).block();
-        logger.info("->"+block.toString());
+        logger.info("->" + block.toString());
         //String name = block.get("tipo_cuenta").asText();
         //logger.info("->"+name);
         return block;
     }
-  
-  
-  private  List<?> getTransactions(String  numero) { 
-    logger.info("getTransactions"+numero);
+
+    private List<?> getTransactions(String numero) {
+        logger.info("getTransactions" + numero);
         WebClient build = webClientBuilder.clientConnector(new ReactorClientHttpConnector(client))
                 .baseUrl("http://localhost:8833/movimientos")//bussinesdomain-movimientos
-                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)               
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .build();
-        
-        
-         List<?> transactions = build.method(HttpMethod.GET).uri(uriBuilder -> uriBuilder
+
+        List<?> transactions = build.method(HttpMethod.GET).uri(uriBuilder -> uriBuilder
                 .path("/cuenta/all")
-                .queryParam("cuenta", numero)               
+                .queryParam("cuenta", numero)
                 .build())
                 .retrieve().bodyToFlux(Object.class).collectList().block();
 
-      logger.info("getTransactions"+transactions);
+        logger.info("getTransactions" + transactions);
         return transactions;
     }
 }

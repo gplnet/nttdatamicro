@@ -23,6 +23,9 @@ public interface ClienteRepository extends JpaRepository<Cliente, Long> {
   @Query(value = "SELECT * FROM Cliente c INNER JOIN cliente_cuenta cc ON cc.cliente_id = c.cliente_id WHERE cc.cuenta_id = ?1", nativeQuery = true)
   public Object findClienteByCodeAccount(Long code);
   
+  @Query(value = "SELECT * FROM Cliente c INNER JOIN cliente_cuenta cc ON cc.cliente_id = c.cliente_id INNER JOIN persona p ON p.cliente_id = c.cliente_id WHERE c.cliente_cod = ?1", nativeQuery = true)
+  public Cliente findClienteByAccountId(String code);
+  
   
 
 
