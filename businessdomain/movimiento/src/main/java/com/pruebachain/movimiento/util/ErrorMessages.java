@@ -11,7 +11,8 @@ package com.pruebachain.movimiento.util;
 public enum ErrorMessages {
   BALANCE_NOT_AVAILABLE("Saldo no disponible"),
   DAILY_QUOTA_EXCEEDED("Cupo diario excedido"),
-  CREATED_OK("Creado correctamente");
+  CREATED_OK("Creado correctamente"),
+  ACCOUNT_DOES_EXITS("THIS ACCOUNT DOES N'T EXITS");
 
   private String errorMessage;
 

@@ -15,7 +15,7 @@ import lombok.Data;
 @Data
 public class ClientRest {
 
-    private String cliente_cod;
+    
     private String identificacion;
     private String nombre;
     private String genero;

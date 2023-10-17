@@ -18,7 +18,8 @@ public enum ErrorMessages {
     INTERNAL_SERVER_ERROR("Internal server error"),
     NO_RECORD_FOUND("Record with provided id es not found"),
     COULD_NOT_UPDATE_RECORD("Could not update record"),
-    COULD_NOT_DELETE_RECORD("Could not delete record");
+    COULD_NOT_DELETE_RECORD("Could not delete record"),
+    ACCOUNT_DOES_EXITS("THIS ACCOUNT DOES N'T EXITS");
     
     
     private String errorMessage;

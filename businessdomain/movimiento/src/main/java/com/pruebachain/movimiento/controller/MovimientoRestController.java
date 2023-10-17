@@ -63,6 +63,7 @@ public class MovimientoRestController {
     public static final Double BASE = 0.00;
 
     public static final String DEBITO = "DEBITO";
+     public static final String CREDITO = "CREDITO";
 
     @Autowired
     private IMovimientoService movimientoRepository;
@@ -177,43 +178,53 @@ public class MovimientoRestController {
     }
 
     @PostMapping(value = "/registrar/{cuenta}")
-    public ResponseEntity<Object> registrar(@RequestBody MovimientoRequestModel mov, @PathVariable("cuenta") String cuenta) throws MovimientosServiceExceptions {
+    public ResponseEntity<Object> registrar(@RequestBody MovimientoRequestModel mov) throws MovimientosServiceExceptions {
         MovimientoRest movim = new MovimientoRest();
         LocalDateTime ldt = LocalDateTime.now();
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-
+ 
         try {
             //JsonNode jsp = getCuentaName(cc.getCuenta_id()); jsp.get("cuenta_id").asText()
-            JsonNode jsp = getCuentaByNumber(cuenta);
+            JsonNode jsp = getCuentaByNumber(mov.getNumerocuenta_movimiento());
             //Cuenta getCuenta = cuentaService.getCuentaByNumber(cuenta);	
             logger.info("jsp" + jsp.get("cuenta_id").asLong());
-            if (jsp.get("cuenta_id").asLong() > 0) {
+            if (jsp.get("cuenta_id") != null) {
                 //mov.setCuenta(getCuenta);
                 logger.info("jsp" + jsp.toString());
                 String numc = jsp.get("numero_cuenta").asText();
                 logger.info("jsp" + jsp.get("numero_cuenta").asText());
                 double getLimite = movimientoRepository.getTotalDebito(LocalDateTime.parse(DateTimeFormatter.ofPattern("yyyy-MM-dd 00:00", Locale.ENGLISH).format(ldt), formatter), LocalDateTime.parse(DateTimeFormatter.ofPattern("yyyy-MM-dd 23:59", Locale.ENGLISH).format(ldt), formatter), numc);
+                double getLimiteTotalDeb = movimientoRepository.getTotalMovimientoByTipo(DEBITO, numc);
+                double getLimiteTotalCred = movimientoRepository.getTotalMovimientoByTipo(CREDITO, numc);
                 logger.info("jsp" + getLimite);
                 Double saldoAct = jsp.get("saldo_inicial").asDouble();//getCuenta.getSaldoInicial();			
                 logger.info("jsp" + saldoAct);
                 if (saldoAct > mov.getValor_movimiento()) {
                     if (getLimite < LIMITE && (getLimite + mov.getValor_movimiento() <= LIMITE)) {
-                        Movimiento movimiento = new Movimiento();
-                        mov.setSaldo_movimiento(saldoAct - mov.getValor_movimiento());
-                        mov.setFecha(ldt);
-                        //mov.getCuenta().setSaldoInicial(saldoAct - mov.getValorMovimeinto());
+                        
                         ModelMapper modelMapper = new ModelMapper();
                         MovimientoDTO createdMovDTO = modelMapper.map(mov, MovimientoDTO.class);
-                        MovimientoDTO movDTO  = movimientoRepository.createMotion(createdMovDTO);
+                        if(createdMovDTO.getTipo_movimiento().equals(DEBITO)){                            
+                            createdMovDTO.setSaldo_movimiento(((saldoAct-getLimiteTotalDeb)+getLimiteTotalCred) - mov.getValor_movimiento());
+                        }else{                            
+                            createdMovDTO.setSaldo_movimiento(((saldoAct+getLimiteTotalCred)-getLimiteTotalDeb) + mov.getValor_movimiento());
+                        }
+                        
+                        mov.setFecha(ldt);
+                        //mov.getCuenta().setSaldoInicial(saldoAct - mov.getValorMovimeinto());
+                        
+                        MovimientoDTO movDTO = movimientoRepository.createMotion(createdMovDTO);
                         movim = modelMapper.map(movDTO, MovimientoRest.class);
-                        logger.info("jsp" + movimiento.toString());
+                        logger.info("jsp" + movim.toString());
                     } else {
                         throw new Exception(ErrorMessages.DAILY_QUOTA_EXCEEDED.getErrorMessage());
                     }
                 } else {
                     throw new Exception(ErrorMessages.BALANCE_NOT_AVAILABLE.getErrorMessage());
                 }
+            }else{
+                throw new Exception(ErrorMessages.ACCOUNT_DOES_EXITS.getErrorMessage());
             }
 
         } catch (Exception e) {
@@ -229,10 +240,12 @@ public class MovimientoRestController {
     public ResponseEntity<MovimientoRest> post(@RequestBody MovimientoRequestModel input) {
         MovimientoRest mov = new MovimientoRest();
         try {
+
             ModelMapper modelMapper = new ModelMapper();
             MovimientoDTO createdMovDTO = modelMapper.map(input, MovimientoDTO.class);
-            MovimientoDTO movDTO = movimientoRepository.createMotion(createdMovDTO);            
+            MovimientoDTO movDTO = movimientoRepository.createMotion(createdMovDTO);
             mov = modelMapper.map(movDTO, MovimientoRest.class);
+
         } catch (Exception e) {
             return new ResponseEntity<MovimientoRest>(mov, HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -246,8 +259,8 @@ public class MovimientoRestController {
             returnValue.setOpretationName(OperationsName.DELETE.name());
             movimientoRepository.deleteMotion(id);
             returnValue.setOperationResult(RequestOperationStatus.SUCCESS.name());
-            
-        } catch (Exception e) {            
+
+        } catch (Exception e) {
             return new ResponseEntity<OperationStatusModel>(returnValue, HttpStatus.INTERNAL_SERVER_ERROR);
 
         }

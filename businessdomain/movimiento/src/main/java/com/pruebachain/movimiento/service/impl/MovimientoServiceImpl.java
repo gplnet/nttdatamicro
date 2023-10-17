@@ -159,5 +159,10 @@ public class MovimientoServiceImpl implements IMovimientoService {
         return JasperExportManager.exportReportToPdf(print);
     }
 
+    @Override
+    public double getTotalMovimientoByTipo(String codCuenta, String tipoMov) throws Exception {
+        return dao.getTotalMovimientoByTipo(codCuenta, tipoMov); 
+    }
+
    
 }

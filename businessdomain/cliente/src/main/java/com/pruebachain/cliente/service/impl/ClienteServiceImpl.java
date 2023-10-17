@@ -51,7 +51,7 @@ public class ClienteServiceImpl implements IClienteService {
     storedClient.setTelefono(cliente.getTelefono());
     storedClient.setContrasena(cliente.getContrasena());
     storedClient.setEstado(cliente.getEstado());
-    
+    storedClient.setCuentas(cliente.getCuentas());
     Cliente updatedCliente = repo.save(storedClient);
     BeanUtils.copyProperties(updatedCliente, returnValue);
     return returnValue;

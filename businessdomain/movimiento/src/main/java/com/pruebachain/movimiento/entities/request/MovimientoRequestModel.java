@@ -17,8 +17,7 @@ public class MovimientoRequestModel {
     
     private LocalDateTime fecha;
     private String tipo_movimiento;
-    private double valor_movimiento;
-    private double saldo_movimiento;
+    private double valor_movimiento;    
     private String numerocuenta_movimiento;
     
 }

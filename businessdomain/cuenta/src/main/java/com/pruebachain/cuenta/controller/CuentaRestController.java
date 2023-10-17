@@ -8,6 +8,7 @@ import com.pruebachain.cuenta.dto.AccountDTO;
 import com.pruebachain.cuenta.entities.Cuenta;
 import com.pruebachain.cuenta.entities.request.AcccountRequestModel;
 import com.pruebachain.cuenta.entities.response.AccountRest;
+import com.pruebachain.cuenta.entities.response.ErrorMessages;
 import com.pruebachain.cuenta.entities.response.OperationStatusModel;
 import com.pruebachain.cuenta.entities.response.OperationsName;
 import com.pruebachain.cuenta.entities.response.RequestOperationStatus;
@@ -45,6 +46,8 @@ public class CuentaRestController {
         try {
             ModelMapper modelMapper = new ModelMapper();
             AccountDTO createdAccount = cuentaRepository.getCuentaByNumber(cuenta);
+            if(createdAccount.getCuenta_id() == null)
+                throw new Exception(ErrorMessages.ACCOUNT_DOES_EXITS.getErrorMessage());
             cuent = modelMapper.map(createdAccount, AccountRest.class);
         } catch (Exception e) {
             return new ResponseEntity<AccountRest>(cuent, HttpStatus.INTERNAL_SERVER_ERROR);

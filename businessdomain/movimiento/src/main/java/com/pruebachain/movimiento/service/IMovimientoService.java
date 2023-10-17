@@ -26,6 +26,7 @@ public interface IMovimientoService {
     List<MovimientoDTO> findByNumeroCuenta(String numerocuenta)throws Exception;
 
     double getTotalDebito(LocalDateTime starDate, LocalDateTime endDate, String codCuenta) throws Exception;
+    double getTotalMovimientoByTipo(String codCuenta, String tipoMov)throws Exception;
 
     List<Object> findByDateAndUser(LocalDateTime startDate, LocalDateTime endDate, String usuario) throws Exception;
 
