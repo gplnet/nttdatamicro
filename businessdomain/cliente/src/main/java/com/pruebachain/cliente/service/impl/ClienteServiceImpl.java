@@ -98,4 +98,9 @@ public class ClienteServiceImpl implements IClienteService {
   public Object findClienteByCodeAccount(Long code) {
     return repo.findClienteByCodeAccount(code);
   }
+
+    @Override
+    public List<Object> findClienteByName(String nombre) {
+        return repo.findClienteByName(nombre);
+    }
 }

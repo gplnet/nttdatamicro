@@ -6,6 +6,7 @@
 package com.pruebachain.cliente.repository;
 
 import com.pruebachain.cliente.entities.Cliente;
+import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -24,10 +25,10 @@ public interface ClienteRepository extends JpaRepository<Cliente, Long> {
   public Object findClienteByCodeAccount(Long code);
   
   @Query(value = "SELECT * FROM Cliente c INNER JOIN cliente_cuenta cc ON cc.cliente_id = c.cliente_id INNER JOIN persona p ON p.cliente_id = c.cliente_id WHERE c.cliente_cod = ?1", nativeQuery = true)
-  public Cliente findClienteByAccountId(String code);
+  public Cliente findClienteByAccountId(String code);  
   
-  
-
+  @Query(value = "SELECT * FROM Cliente c INNER JOIN Persona p ON p.cliente_id = c.cliente_id INNER JOIN cliente_cuenta cc ON cc.cliente_id = c.cliente_id WHERE p.nombre Like ?1%", nativeQuery = true)
+  public List<Object> findClienteByName(String nombre);
 
 
 }

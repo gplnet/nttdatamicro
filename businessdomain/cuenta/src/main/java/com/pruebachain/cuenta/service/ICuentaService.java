@@ -6,6 +6,7 @@
 package com.pruebachain.cuenta.service;
 
 import com.pruebachain.cuenta.dto.AccountDTO;
+import com.pruebachain.cuenta.entities.Cuenta;
 import java.util.List;
 
 /**
@@ -24,4 +25,6 @@ public interface ICuentaService {
   List<AccountDTO> listar();  
 
   AccountDTO getCuentaByNumber(String cuenta)throws Exception;
+  
+  AccountDTO getCuentaById(Long id);
 }

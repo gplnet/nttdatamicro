@@ -30,4 +30,6 @@ public interface IClienteService {
   Object findClienteByCodeAccount(Long code);
 
   List<ClienteDTO> listar();
+  
+  List<Object> findClienteByName(String nombre);
 }

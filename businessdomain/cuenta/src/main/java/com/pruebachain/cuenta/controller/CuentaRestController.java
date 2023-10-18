@@ -118,6 +118,21 @@ public class CuentaRestController {
         }
         return new ResponseEntity<AccountRest>(cuenta, HttpStatus.OK);
     }
+    
+     @GetMapping(value = "/search/{id}")
+    public ResponseEntity<AccountRest> findCuentaById(@PathVariable Long id) {
+        AccountRest cuenta = new AccountRest();
+        try {
+            ModelMapper modelMapper = new ModelMapper();
+            AccountDTO createdAccount = cuentaRepository.getCuentaById(id);
+            cuenta = modelMapper.map(createdAccount, AccountRest.class);
+        } catch (Exception e) {
+            return new ResponseEntity<AccountRest>(cuenta, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return new ResponseEntity<AccountRest>(cuenta, HttpStatus.OK);
+    }
+    
+    
 
     @PostMapping(value = "/registrar")
     public ResponseEntity<AccountRest> post(@RequestBody AcccountRequestModel input) {

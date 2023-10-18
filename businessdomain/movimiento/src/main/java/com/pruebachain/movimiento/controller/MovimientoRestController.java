@@ -142,6 +142,9 @@ public class MovimientoRestController {
     public ResponseEntity<List<Object>> listByDateAndUser(@PathVariable("starDate") String starDate, @PathVariable("endDate") String endDate, @PathVariable("usuario") String usuario) throws Exception {
         List<Object> listado = new ArrayList<>();
         try {
+            
+            JsonNode jspClient = getClienteByName(usuario);
+            JsonNode jspCCuenta = getCuentaById(jspClient.get("cuenta_id").asLong());
 
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
@@ -236,7 +239,7 @@ public class MovimientoRestController {
 
     }
 
-    @PostMapping(value = "/registrar")
+    /*@PostMapping(value = "/registrar")
     public ResponseEntity<MovimientoRest> post(@RequestBody MovimientoRequestModel input) {
         MovimientoRest mov = new MovimientoRest();
         try {
@@ -250,7 +253,7 @@ public class MovimientoRestController {
             return new ResponseEntity<MovimientoRest>(mov, HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return new ResponseEntity<MovimientoRest>(mov, HttpStatus.OK);
-    }
+    }*/
 
     @DeleteMapping(value = "/eliminar/{id}")
     public ResponseEntity<OperationStatusModel> delete(@PathVariable String id) {
@@ -266,6 +269,21 @@ public class MovimientoRestController {
         }
         return new ResponseEntity<OperationStatusModel>(returnValue, HttpStatus.OK);
     }
+    
+    private JsonNode getCuentaById(Long id) {
+        logger.info("getCuentaByNumber" + id);
+        WebClient build = webClientBuilder.clientConnector(new ReactorClientHttpConnector(client))
+                .baseUrl("http://localhost:8832/cuentas")//bussinesdomain-cuentas
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .defaultUriVariables(Collections.singletonMap("url", "http://localhost:8832/cuentas"))//bussinesdomain-cuentas
+                .build();
+        JsonNode block = build.method(HttpMethod.GET).uri("/search/" + id)
+                .retrieve().bodyToMono(JsonNode.class).block();
+        logger.info("->" + block.toString());
+        //String name = block.get("tipo_cuenta").asText();
+        //logger.info("->"+name);
+        return block;
+    }
 
     private JsonNode getCuentaByNumber(String numero) {
         logger.info("getCuentaByNumber" + numero);
@@ -275,6 +293,21 @@ public class MovimientoRestController {
                 .defaultUriVariables(Collections.singletonMap("url", "http://localhost:8832/cuentas"))//bussinesdomain-cuentas
                 .build();
         JsonNode block = build.method(HttpMethod.GET).uri("/cuentaListar/" + numero)
+                .retrieve().bodyToMono(JsonNode.class).block();
+        logger.info("->" + block.toString());
+        //String name = block.get("tipo_cuenta").asText();
+        //logger.info("->"+name);
+        return block;
+    }
+    
+    private JsonNode getClienteByName(String name) {
+        logger.info("getCuentaByNumber" + name);
+        WebClient build = webClientBuilder.clientConnector(new ReactorClientHttpConnector(client))
+                .baseUrl("http://localhost:8832/clientes")//bussinesdomain-cuentas
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .defaultUriVariables(Collections.singletonMap("url", "http://localhost:8832/cuentas"))//bussinesdomain-cuentas
+                .build();
+        JsonNode block = build.method(HttpMethod.GET).uri("/listarClienteByName/" + name)
                 .retrieve().bodyToMono(JsonNode.class).block();
         logger.info("->" + block.toString());
         //String name = block.get("tipo_cuenta").asText();

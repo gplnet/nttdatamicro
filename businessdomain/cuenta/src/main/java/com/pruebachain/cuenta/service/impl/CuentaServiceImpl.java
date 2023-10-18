@@ -100,4 +100,12 @@ public class CuentaServiceImpl implements ICuentaService {
         return returnValue;
     }
 
+    @Override
+    public AccountDTO getCuentaById(Long id) {
+        AccountDTO returnValue = new AccountDTO();
+        Cuenta storedAccount = dao.getCuentaById(id);
+        BeanUtils.copyProperties(storedAccount, returnValue);
+        return returnValue;
+    }
+
 }

@@ -101,7 +101,7 @@ public class ClienteController {
                         c.getCuentas()
                                 .forEach(
                                         cc -> {
-                                            JsonNode jsp = getCuentaName(cc.getCuenta_id());
+                                            JsonNode jsp = getCuentaById(cc.getCuenta_id());
                                             cc.setCuenta_tipo(jsp.get("tipo_cuenta").asText());
                                             //c.setMovientos(getTransactions(jsp.get("numero_cuenta").asText()));
                                             lista.put("" + cc.getCuenta_id(), jsp.get("numero_cuenta").asText());
@@ -165,6 +165,19 @@ public class ClienteController {
         }
         return new ResponseEntity<Object>(obj, HttpStatus.OK);
     }
+    
+     @GetMapping(value = "/listarClienteByName/{name}")
+    public ResponseEntity<Object> listarClienteByName(@PathVariable String name) {
+        Object obj = new Object();
+        try {
+            obj = clienteRepository.findClienteByName(name);
+            logger.info("findAll-3" + obj.toString());
+        } catch (Exception e) {
+            return new ResponseEntity<Object>(obj, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return new ResponseEntity<Object>(obj, HttpStatus.OK);
+    }
+    
 
     @PutMapping(value = "/actualizar/{id}")
     public ResponseEntity<OperationStatusModel> put(@PathVariable String id, @RequestBody ClientRequestModel input) {
@@ -233,8 +246,23 @@ public class ClienteController {
         //logger.info("->"+name);
         return block;
     }
+    
+    private JsonNode getCuentaById(long id) {
+        logger.info("getCuentaName" + id);
+        WebClient build = webClientBuilder.clientConnector(new ReactorClientHttpConnector(client))
+                .baseUrl("http://localhost:8832/cuentas")//bussinesdomain-cuentas
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .defaultUriVariables(Collections.singletonMap("url", "http://localhost:8832/cuentas"))//bussinesdomain-cuentas
+                .build();
+        JsonNode block = build.method(HttpMethod.GET).uri("/search/" + id)
+                .retrieve().bodyToMono(JsonNode.class).block();
+        logger.info("->" + block.toString());
+        //String name = block.get("tipo_cuenta").asText();
+        //logger.info("->"+name);
+        return block;
+    }
 
-    private JsonNode getCuentaName(long id) {
+    private JsonNode getCuentaName(String id) {
         logger.info("getCuentaName" + id);
         WebClient build = webClientBuilder.clientConnector(new ReactorClientHttpConnector(client))
                 .baseUrl("http://localhost:8832/cuentas")//bussinesdomain-cuentas
