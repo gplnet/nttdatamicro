@@ -5,6 +5,7 @@
 package com.pruebachain.cliente.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pruebachain.cliente.dto.ClienteDTO;
 import com.pruebachain.cliente.repository.ClienteRepository;
 import org.springframework.web.bind.annotation.RestController;
@@ -32,6 +33,7 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.epoll.EpollChannelOption;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.handler.timeout.WriteTimeoutHandler;
+import java.lang.reflect.Field;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -165,19 +167,26 @@ public class ClienteController {
         }
         return new ResponseEntity<Object>(obj, HttpStatus.OK);
     }
-    
-     @GetMapping(value = "/listarClienteByName/{name}")
-    public ResponseEntity<Object> listarClienteByName(@PathVariable String name) {
-        Object obj = new Object();
+
+    @GetMapping(value = "/listarClienteByName/{name}")
+    public ResponseEntity<HashMap<String, Long>> listarClienteByName(@PathVariable String name) {
+        List<Long> obj = new ArrayList<>();
+        HashMap<String, Long> input = new HashMap<>();
         try {
             obj = clienteRepository.findClienteByName(name);
+            obj.forEach(x -> {
+                logger.info("findAll-2" + x.toString());
+               
+                input.put("id", x);
+                
+            });
+            logger.info("findAll-2" + input.get("id").toString());
             logger.info("findAll-3" + obj.toString());
         } catch (Exception e) {
-            return new ResponseEntity<Object>(obj, HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<HashMap<String, Long>>(input, HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        return new ResponseEntity<Object>(obj, HttpStatus.OK);
+        return new ResponseEntity<HashMap<String, Long>>(input, HttpStatus.OK);
     }
-    
 
     @PutMapping(value = "/actualizar/{id}")
     public ResponseEntity<OperationStatusModel> put(@PathVariable String id, @RequestBody ClientRequestModel input) {
@@ -246,7 +255,7 @@ public class ClienteController {
         //logger.info("->"+name);
         return block;
     }
-    
+
     private JsonNode getCuentaById(long id) {
         logger.info("getCuentaName" + id);
         WebClient build = webClientBuilder.clientConnector(new ReactorClientHttpConnector(client))

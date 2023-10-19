@@ -25,6 +25,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 
 import org.springframework.web.bind.annotation.RestController;
@@ -144,8 +145,11 @@ public class MovimientoRestController {
         try {
             
             JsonNode jspClient = getClienteByName(usuario);
-            JsonNode jspCCuenta = getCuentaById(jspClient.get("cuenta_id").asLong());
-
+            Long idCliente = jspClient.get("id").asLong();
+            logger.info("findAll-2" + idCliente.toString());
+            JsonNode jspCCuenta = getCuentaById(idCliente);
+            //numero_cuenta
+            logger.info("findAll-2" + jspCCuenta.toString());
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
             LocalDate date = LocalDate.parse(starDate);
@@ -153,9 +157,15 @@ public class MovimientoRestController {
 
             LocalDateTime beginDate = LocalDateTime.parse(DateTimeFormatter.ofPattern("yyyy-MM-dd 00:00", Locale.ENGLISH).format(date), formatter);
             LocalDateTime afterDate = LocalDateTime.parse(DateTimeFormatter.ofPattern("yyyy-MM-dd 23:59", Locale.ENGLISH).format(dateEnd), formatter);
-
-            listado = movimientoRepository.findByDateAndUser(beginDate, afterDate, usuario);
-
+            logger.info("fecha" + beginDate.toString());
+            logger.info("fecha2: " + afterDate.toString());
+            logger.info("fecha2: " + jspCCuenta.get("numero_cuenta").asText());
+            listado = movimientoRepository.findByDateAndUser(beginDate, afterDate, jspCCuenta.get("numero_cuenta").asText());
+            logger.info("fecha2: " + listado.size());
+            listado.forEach(x -> {
+                logger.info("fecha2: " + x.toString());
+                
+            });
         } catch (Exception e) {
             // TODO: handle exception			
             new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
@@ -303,7 +313,7 @@ public class MovimientoRestController {
     private JsonNode getClienteByName(String name) {
         logger.info("getCuentaByNumber" + name);
         WebClient build = webClientBuilder.clientConnector(new ReactorClientHttpConnector(client))
-                .baseUrl("http://localhost:8832/clientes")//bussinesdomain-cuentas
+                .baseUrl("http://localhost:8899/clientes")//bussinesdomain-cuentas
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .defaultUriVariables(Collections.singletonMap("url", "http://localhost:8832/cuentas"))//bussinesdomain-cuentas
                 .build();

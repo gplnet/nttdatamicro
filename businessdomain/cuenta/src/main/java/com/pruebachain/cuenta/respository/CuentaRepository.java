@@ -25,7 +25,7 @@ public interface CuentaRepository extends JpaRepository<Cuenta, Long> {
   @Query(value = "SELECT * FROM cuenta WHERE cuenta_id = ?1" ,nativeQuery = true)
   public Cuenta getCuentaByCuentaId(String id);
   
-  @Query(value = "SELECT * FROM cuenta WHERE id = ?1" ,nativeQuery = true)
+  @Query(value = "SELECT * FROM cuenta c WHERE c.id = ?1" ,nativeQuery = true)
   public Cuenta getCuentaById(Long id);
   
   @Modifying

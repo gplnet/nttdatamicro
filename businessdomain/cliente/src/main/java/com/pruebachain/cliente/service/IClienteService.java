@@ -31,5 +31,5 @@ public interface IClienteService {
 
   List<ClienteDTO> listar();
   
-  List<Object> findClienteByName(String nombre);
+  List<Long> findClienteByName(String nombre);
 }

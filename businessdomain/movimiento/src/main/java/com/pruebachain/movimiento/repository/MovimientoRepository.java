@@ -30,7 +30,7 @@ public interface MovimientoRepository extends JpaRepository<Movimiento, Long> {
     @Query(value = "select COALESCE(sum(valor_movimiento),0) as total from movimiento where tipo_movimiento=?1 and numerocuenta_movimiento = ?2", nativeQuery = true)
     public double getTotalMovimientoByTipo(String codCuenta, String tipoMov);
 
-    @Query(value = "select movimientos.fecha, persona.nombre, cuenta.numero_cuenta, cuenta.tipo_cuenta, cuenta.saldo_inicial, cuenta.estado_cuenta, movimientos.valor_movimiento, movimientos.saldo_movimiento from movimientos inner join cuenta on cuenta.cuenta_id = movimientos.cuenta_id inner join cliente on cliente.cliente_id = cuenta.cliente_id inner join persona on persona.cliente_id = cliente.cliente_id where persona.nombre like %?3% and movimientos.fecha  between ?1 and ?2 order by movimientos.fecha asc", nativeQuery = true)
+    @Query(value = "select * from movimiento t where t.numerocuenta_movimiento = ?3 and t.fecha  between ?1 and ?2 order by t.fecha asc", nativeQuery = true)
     public List<Object> findByDateAndUser(LocalDateTime startDate, LocalDateTime endDate, String usuario);
 
 }

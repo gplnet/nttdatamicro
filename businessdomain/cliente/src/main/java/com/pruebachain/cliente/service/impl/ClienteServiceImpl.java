@@ -100,7 +100,7 @@ public class ClienteServiceImpl implements IClienteService {
   }
 
     @Override
-    public List<Object> findClienteByName(String nombre) {
+    public List<Long> findClienteByName(String nombre) {
         return repo.findClienteByName(nombre);
     }
 }
