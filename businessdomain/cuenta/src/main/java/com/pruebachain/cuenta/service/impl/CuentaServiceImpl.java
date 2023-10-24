@@ -108,4 +108,10 @@ public class CuentaServiceImpl implements ICuentaService {
         return returnValue;
     }
 
+    @Override
+    public Long getIdByNumberAccount(String cuenta) throws Exception {
+        return dao.getIdByNumberAccount(cuenta); 
+    }
+    
+
 }

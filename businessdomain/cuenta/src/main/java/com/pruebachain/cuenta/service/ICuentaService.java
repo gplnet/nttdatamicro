@@ -25,6 +25,7 @@ public interface ICuentaService {
   List<AccountDTO> listar();  
 
   AccountDTO getCuentaByNumber(String cuenta)throws Exception;
+  Long getIdByNumberAccount(String cuenta)throws Exception;
   
   AccountDTO getCuentaById(Long id);
 }

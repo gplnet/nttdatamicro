@@ -190,7 +190,7 @@ public class MovimientoRestController {
         return new ResponseEntity<OperationStatusModel>(returnValue, HttpStatus.OK);
     }
 
-    @PostMapping(value = "/registrar/{cuenta}")
+    @PostMapping(value = "/registrar")
     public ResponseEntity<Object> registrar(@RequestBody MovimientoRequestModel mov) throws MovimientosServiceExceptions {
         MovimientoRest movim = new MovimientoRest();
         LocalDateTime ldt = LocalDateTime.now();

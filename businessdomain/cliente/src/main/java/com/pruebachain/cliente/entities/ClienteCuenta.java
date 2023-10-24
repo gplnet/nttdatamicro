@@ -31,6 +31,8 @@ public class ClienteCuenta {
   private long cuenta_id;
   @Transient 
   private String cuenta_tipo;
+  @Transient 
+  private String numero_cuenta;
 
   @JsonIgnore
   @ManyToOne(fetch = FetchType.LAZY, targetEntity = Cliente.class)

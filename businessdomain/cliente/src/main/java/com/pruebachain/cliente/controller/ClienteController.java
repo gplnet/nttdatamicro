@@ -6,6 +6,7 @@ package com.pruebachain.cliente.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pruebachain.cliente.dto.ClienteCuentaDTO;
 import com.pruebachain.cliente.dto.ClienteDTO;
 import com.pruebachain.cliente.repository.ClienteRepository;
 import org.springframework.web.bind.annotation.RestController;
@@ -24,6 +25,7 @@ import com.pruebachain.cliente.entities.Cliente;
 import com.pruebachain.cliente.entities.ClienteCuenta;
 import com.pruebachain.cliente.entities.request.ClientRequestModel;
 import com.pruebachain.cliente.entities.response.ClientRest;
+import com.pruebachain.cliente.entities.response.ClienteRestt;
 import com.pruebachain.cliente.entities.response.OperationStatusModel;
 import com.pruebachain.cliente.entities.response.OperationsName;
 import com.pruebachain.cliente.entities.response.RequestOperationStatus;
@@ -106,6 +108,7 @@ public class ClienteController {
                                             JsonNode jsp = getCuentaById(cc.getCuenta_id());
                                             cc.setCuenta_tipo(jsp.get("tipo_cuenta").asText());
                                             //c.setMovientos(getTransactions(jsp.get("numero_cuenta").asText()));
+                                            cc.setNumero_cuenta(jsp.get("numero_cuenta").asText());
                                             lista.put("" + cc.getCuenta_id(), jsp.get("numero_cuenta").asText());
                                         });
                     });
@@ -206,23 +209,27 @@ public class ClienteController {
     }
 
     @PostMapping(value = "/registrar")
-    public ResponseEntity<ClientRest> post(@RequestBody ClientRest input) {
-        ClientRest client = new ClientRest();
+    public ResponseEntity<ClienteRestt> post(@RequestBody ClienteRestt input) {
+        ClienteRestt client = new ClienteRestt();
         try {
             ModelMapper modelMapper = new ModelMapper();
+            for(ClienteCuentaDTO cc : input.getCuentas()){
+                JsonNode jsp = getIdAccountByNumber(cc.getNumero_cuenta());
+                cc.setCuenta_id(jsp.get("id").asLong());
+            }            
             //input.getCuentas().forEach(x -> x.setCliente(input));
             ClienteDTO clientDTO = modelMapper.map(input, ClienteDTO.class);
             //input.getCuentas().forEach((x) -> {x.setCliente(input);});
 
             //client = clienteRepository.registrar(input);
             ClienteDTO createdClient = clienteRepository.registrar(clientDTO);
-            client = modelMapper.map(createdClient, ClientRest.class);
+            client = modelMapper.map(createdClient, ClienteRestt.class);
 
         } catch (Exception e) {
-            return new ResponseEntity<ClientRest>(client, HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<ClienteRestt>(client, HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
-        return new ResponseEntity<ClientRest>(client, HttpStatus.OK);
+        return new ResponseEntity<ClienteRestt>(client, HttpStatus.OK);
     }
 
     @DeleteMapping(value = "/eliminar/{id}")
@@ -239,6 +246,21 @@ public class ClienteController {
 
         }
         return new ResponseEntity<OperationStatusModel>(returnValue, HttpStatus.OK);
+    }
+    
+     private JsonNode getIdAccountByNumber(String numero) {
+        logger.info("getIdAccountByNumber" + numero);
+        WebClient build = webClientBuilder.clientConnector(new ReactorClientHttpConnector(client))
+                .baseUrl("http://localhost:8832/cuentas")//bussinesdomain-cuentas
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .defaultUriVariables(Collections.singletonMap("url", "http://localhost:8832/cuentas"))//bussinesdomain-cuentas
+                .build();
+        JsonNode block = build.method(HttpMethod.GET).uri("/getIdAccount/" + numero)
+                .retrieve().bodyToMono(JsonNode.class).block();
+        logger.info("->" + block.toString());
+        //String name = block.get("tipo_cuenta").asText();
+        //logger.info("->"+name);
+        return block;
     }
 
     private JsonNode getCuentaByNumber(String numero) {

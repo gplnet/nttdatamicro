@@ -14,6 +14,7 @@ import com.pruebachain.cuenta.entities.response.OperationsName;
 import com.pruebachain.cuenta.entities.response.RequestOperationStatus;
 import com.pruebachain.cuenta.service.ICuentaService;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -39,6 +40,23 @@ public class CuentaRestController {
 
     @Autowired
     private ICuentaService cuentaRepository;
+    
+    
+    @GetMapping(value = "/getIdAccount/{account}")
+    public ResponseEntity<HashMap<String, Long>> listarClienteByName(@PathVariable String account) {
+        Long obj = 0L;
+        HashMap<String, Long> input = new HashMap<>();
+        try {
+            obj = cuentaRepository.getIdByNumberAccount(account);            
+               
+            input.put("id", obj);              
+            
+            
+        } catch (Exception e) {
+            return new ResponseEntity<HashMap<String, Long>>(input, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return new ResponseEntity<HashMap<String, Long>>(input, HttpStatus.OK);
+    }
 
     @GetMapping(value = "/cuentaListar/{cuenta}")
     public ResponseEntity<AccountRest> listarCuenta(@PathVariable String cuenta) {
